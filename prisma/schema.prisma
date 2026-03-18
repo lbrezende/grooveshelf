@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  TRIAL
+  PRO
+}
+
+enum WishlistStatus {
+  WANTING
+  BOUGHT
+}
+
+enum MonthlyListStatus {
+  DRAFT
+  FINALIZED
+}
+
+// ── Auth.js models ──────────────────────────────────────────
+
+model User {
+  id                       String    @id @default(cuid())
+  name                     String?
+  email                    String    @unique
+  emailVerified            DateTime?
+  image                    String?
+  plan                     Plan      @default(FREE)
+  trialEndsAt              DateTime?
+  stripeCustomerId         String?   @unique
+  stripePriceId            String?
+  stripeSubscriptionId     String?   @unique
+  stripeCurrentPeriodEnd   DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  artists           Artist[]
+  wishlistItems     WishlistItem[]
+  monthlyLists      MonthlyList[]
+  listeningSessions ListeningSession[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ── Product models ──────────────────────────────────────────
+
+model Artist {
+  id        String   @id @default(cuid())
+  name      String
+  genre     String?
+  imageUrl  String?
+  spotifyId String?
+  userId    String
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albums Album[]
+
+  @@unique([userId, spotifyId])
+}
+
+model Album {
+  id        String   @id @default(cuid())
+  title     String
+  artistId  String
+  year      Int?
+  label     String?
+  coverUrl  String?
+  format    String?
+  discogsId String?
+  createdAt DateTime @default(now())
+
+  artist            Artist             @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tracks            Track[]
+  wishlistItems     WishlistItem[]
+  listeningSessions ListeningSession[]
+}
+
+model Track {
+  id         String  @id @default(cuid())
+  title      String
+  albumId    String
+  duration   Int?
+  youtubeUrl String?
+  spotifyUrl String?
+  playCount  Int     @default(0)
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+}
+
+model WishlistItem {
+  id            String         @id @default(cuid())
+  userId        String
+  albumId       String
+  priorityScore Float          @default(0)
+  targetPrice   Float?
+  amazonUrl     String?
+  status        WishlistStatus @default(WANTING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album       Album        @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  priceAlerts PriceAlert[]
+
+  @@unique([userId, albumId])
+}
+
+model PriceAlert {
+  id               String    @id @default(cuid())
+  wishlistItemId   String
+  currentPrice     Float?
+  lowestPrice      Float?
+  lastCheckedAt    DateTime?
+  alertTriggered   Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+
+  wishlistItem WishlistItem @relation(fields: [wishlistItemId], references: [id], onDelete: Cascade)
+}
+
+model MonthlyList {
+  id        String            @id @default(cuid())
+  userId    String
+  month     String
+  budget    Float?
+  itemIds   String[]
+  status    MonthlyListStatus @default(DRAFT)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+}
+
+model ListeningSession {
+  id         String   @id @default(cuid())
+  userId     String
+  albumId    String
+  listenedAt DateTime @default(now())
+  rating     Int?
+  notes      String?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+}
