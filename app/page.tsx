@@ -1,22 +1,13 @@
 "use client";
 
-import { useRef, useEffect, useCallback, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Gravity, { MatterBody } from "@/components/fancy/physics/gravity";
 import { TextHighlighter } from "@/components/fancy/text/text-highlighter";
 import Link from "next/link";
 
 const Hyperspeed = dynamic(() => import("@/components/Hyperspeed"), { ssr: false });
-
-const gravityWords = [
-  { text: "disco", color: "bg-primary", x: "20%", y: "2%", angle: -12 },
-  { text: "vinil", color: "bg-chart-2", x: "65%", y: "5%", angle: 8 },
-  { text: "música", color: "bg-primary", x: "42%", y: "0%", angle: -5 },
-  { text: "paixão", color: "bg-chart-3", x: "55%", y: "3%", angle: 15 },
-  { text: "favorito", color: "bg-chart-2", x: "30%", y: "1%", angle: -20 },
-];
 
 const features = [
   {
@@ -111,17 +102,35 @@ const cyberpunkHyperspeed = {
 };
 
 function HeroSection() {
+  const [showHyperspeed, setShowHyperspeed] = useState(false);
+
+  // Load Hyperspeed after 2s idle to not block initial render
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHyperspeed(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section
       className="relative overflow-hidden bg-background"
       style={{ minHeight: "100vh" }}
     >
-      {/* Hyperspeed 3D background */}
-      <div className="absolute inset-0 z-0">
-        <Suspense fallback={<div className="w-full h-full bg-background" />}>
-          <Hyperspeed effectOptions={cyberpunkHyperspeed} />
-        </Suspense>
-      </div>
+      {/* Static gradient fallback — shows instantly, no JS needed */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: "radial-gradient(ellipse 80% 60% at 50% 100%, color-mix(in srgb, var(--primary) 15%, transparent) 0%, color-mix(in srgb, var(--accent) 8%, transparent) 40%, var(--background) 70%)",
+        }}
+      />
+
+      {/* Hyperspeed 3D — loaded after 2s to not block FCP/LCP */}
+      {showHyperspeed && (
+        <div className="absolute inset-0 z-0 animate-[fadeIn_1s_ease-in]">
+          <Suspense fallback={null}>
+            <Hyperspeed effectOptions={cyberpunkHyperspeed} />
+          </Suspense>
+        </div>
+      )}
 
       {/* Gradient overlay for readability */}
       <div

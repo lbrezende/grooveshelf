@@ -6,7 +6,8 @@ import "./globals.css";
 const nunitoSans = Nunito_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700", "800"],
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
