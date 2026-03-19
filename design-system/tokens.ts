@@ -69,8 +69,8 @@ export const tokens: DesignTokens = {
       {
         name: "Heading 1",
         tag: "h1",
-        classes: "text-5xl font-bold",
-        description: "Page titles, hero headings",
+        classes: "text-5xl font-bold leading-[1.1]",
+        description: "Page titles, hero headings — 110% line-height",
       },
       {
         name: "Heading 2",

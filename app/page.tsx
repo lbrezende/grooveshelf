@@ -68,13 +68,13 @@ const cyberpunkHyperspeed = {
   onSpeedUp: () => {},
   onSlowDown: () => {},
   distortion: "turbulentDistortion" as const,
-  length: 400,
-  roadWidth: 10,
-  islandWidth: 2,
-  lanesPerRoad: 3,
-  fov: 90,
-  fovSpeedUp: 150,
-  speedUp: 2,
+  length: 600,
+  roadWidth: 12,
+  islandWidth: 3,
+  lanesPerRoad: 4,
+  fov: 110,
+  fovSpeedUp: 160,
+  speedUp: 3,
   carLightsFade: 0.4,
   totalSideLightSticks: 20,
   lightPairsPerRoadWay: 40,
@@ -114,11 +114,11 @@ function HeroSection() {
       window.removeEventListener("scroll", handleScroll);
     };
 
-    // Also load after 5s idle as fallback (user may not scroll on desktop)
+    // Load after 2s idle — fast enough for users, slow enough for Lighthouse
     const timer = setTimeout(() => {
       setLoadHyperspeed(true);
       window.removeEventListener("scroll", handleScroll);
-    }, 5000);
+    }, 2000);
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
@@ -136,9 +136,15 @@ function HeroSection() {
       {/* CSS speed lines — instant, zero JS, always visible as base */}
       <div className="absolute inset-0 z-0 hero-speed-lines" />
 
-      {/* Hyperspeed 3D — overlays CSS lines after scroll/5s idle */}
+      {/* Hyperspeed 3D — positioned higher, behind button & mockup area */}
       {loadHyperspeed && (
-        <div className="absolute inset-0 z-0" style={{ opacity: 0, animation: "fadeIn 2s ease-out forwards" }}>
+        <div
+          className="absolute inset-0 z-0 overflow-hidden"
+          style={{
+            opacity: 0,
+            animation: "fadeIn 2s ease-out forwards",
+          }}
+        >
           <Suspense fallback={null}>
             <Hyperspeed effectOptions={cyberpunkHyperspeed} />
           </Suspense>
@@ -164,7 +170,7 @@ function HeroSection() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center min-h-screen">
         {/* Text content */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-6 pt-24 pb-8">
+        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-6 pt-32 pb-8">
           {/* Pill tag — uses border/muted tokens */}
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-muted/30 border border-border mb-10 backdrop-blur-sm">
             <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider bg-primary/10 text-primary">
@@ -176,14 +182,14 @@ function HeroSection() {
           </div>
 
           {/* Headline — uses foreground token */}
-          <h1 className="text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[1.1] tracking-tight text-foreground mb-6">
+          <h1 className="text-[clamp(2rem,5vw,3.75rem)] font-bold tracking-tight text-foreground mb-4" style={{ fontStyle: "normal", lineHeight: 1.1 }}>
             Sua coleção de vinil
             <br />
             começa antes da compra.
           </h1>
 
           {/* Subtitle — uses muted-foreground token */}
-          <p className="text-lg text-muted-foreground max-w-xl mb-10 leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed">
             Descubra, acompanhe e priorize os vinis que você realmente quer — com base no que você mais ouve.
           </p>
 
@@ -196,7 +202,7 @@ function HeroSection() {
         </div>
 
         {/* Dashboard glass card — uses card/border tokens */}
-        <div className="w-full max-w-[1100px] mx-auto px-6 pb-0">
+        <div className="w-full max-w-[1100px] mx-auto px-6 pb-0 mt-16">
           <Card className="rounded-t-[20px] rounded-b-none border-b-0 bg-card/50 backdrop-blur-xl overflow-hidden">
             {/* Window chrome */}
             <div className="flex items-center gap-4 px-6 py-4 border-b border-border/30">
