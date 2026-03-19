@@ -15,7 +15,21 @@ export async function GET() {
       orderBy: { month: "desc" },
     });
 
-    return NextResponse.json(lists);
+    // For each list, fetch the actual wishlist items with album+artist data
+    const populatedLists = await Promise.all(
+      lists.map(async (list) => {
+        const items =
+          list.itemIds.length > 0
+            ? await db.wishlistItem.findMany({
+                where: { id: { in: list.itemIds } },
+                include: { album: { include: { artist: true } } },
+              })
+            : [];
+        return { ...list, items };
+      })
+    );
+
+    return NextResponse.json(populatedLists);
   } catch (error) {
     console.error("[MONTHLY_LIST_GET]", error);
     return NextResponse.json(

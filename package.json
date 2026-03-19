@@ -10,7 +10,11 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "tokens": "tsx design-system/generate-css.ts",
-    "tokens:check": "tsx design-system/generate-css.ts --check"
+    "tokens:check": "tsx design-system/generate-css.ts --check",
+    "db:seed": "npx prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

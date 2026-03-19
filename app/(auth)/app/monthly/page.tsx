@@ -1,142 +1,169 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, type DragEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Plus,
-  Calendar,
+  ChevronLeft,
+  ChevronRight,
   Disc3,
-  DollarSign,
-  ShoppingBag,
+  X,
+  CalendarRange,
+  GripVertical,
+  AlertTriangle,
 } from "lucide-react";
 import { PaywallGate } from "@/components/paywall/paywall-gate";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface Album {
+  id: string;
+  title: string;
+  coverUrl?: string;
+  artist?: { name: string };
+}
 
 interface WishlistItem {
   id: string;
   albumId: string;
-  album?: {
-    id: string;
-    title: string;
-    coverUrl?: string;
-    artist?: { name: string };
-  };
+  album?: Album;
   targetPrice?: number;
   status: "WANTING" | "BOUGHT";
 }
 
-interface MonthlyListItem {
-  id: string;
-  wishlistItemId: string;
-  wishlistItem?: WishlistItem;
-  currentPrice?: number;
-}
-
 interface MonthlyList {
   id: string;
-  month: string;
+  month: string; // "YYYY-MM"
   budget?: number;
-  items: MonthlyListItem[];
-  itemIds?: string[];
+  itemIds: string[];
   status?: string;
   createdAt: string;
 }
 
-const MONTHS = [
-  "Janeiro",
-  "Fevereiro",
-  "Marco",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const MONTH_LABELS = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
 ];
 
-function getMonthLabel(monthStr: string) {
-  const [year, month] = monthStr.split("-");
-  return `${MONTHS[parseInt(month) - 1]} ${year}`;
+const DEFAULT_BUDGET = 150;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function monthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+function getPrice(item: WishlistItem) {
+  return item.targetPrice ?? 0;
 }
 
-export default function MonthlyListPage() {
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
+export default function MonthlyPlanningPage() {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Form state
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
-  const [budget, setBudget] = useState("");
-  const [selectedWishlistIds, setSelectedWishlistIds] = useState<string[]>([]);
+  const [selectedYear, setSelectedYear] = useState(() =>
+    new Date().getFullYear(),
+  );
+
+  // Drag state
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverMonth, setDragOverMonth] = useState<string | null>(null);
+
+  // Inline-editing budgets keyed by "YYYY-MM"
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [budgetDraft, setBudgetDraft] = useState("");
 
   const userPlan = (session?.user as { plan?: string })?.plan ?? "FREE";
   const isFree = userPlan === "FREE";
 
+  // ---------------------------------------------------------------------------
   // Queries
-  const { data: monthlyLists = [], isLoading: loadingLists } = useQuery<
+  // ---------------------------------------------------------------------------
+
+  const { data: wishlist = [], isLoading: loadingWishlist } = useQuery<
+    WishlistItem[]
+  >({
+    queryKey: ["wishlist"],
+    queryFn: () => fetch("/api/wishlist").then((r) => r.json()),
+  });
+
+  const { data: allMonthlyLists = [], isLoading: loadingLists } = useQuery<
     MonthlyList[]
   >({
     queryKey: ["monthly-list"],
     queryFn: () => fetch("/api/monthly-list").then((r) => r.json()),
   });
 
-  const { data: wishlist = [] } = useQuery<WishlistItem[]>({
-    queryKey: ["wishlist"],
-    queryFn: () => fetch("/api/wishlist").then((r) => r.json()),
-  });
+  // ---------------------------------------------------------------------------
+  // Derived data
+  // ---------------------------------------------------------------------------
 
-  // Current month list
-  const currentMonth = getCurrentMonth();
-  const currentList = monthlyLists.find((l) => l.month === currentMonth);
+  // Monthly lists for selected year, indexed by "YYYY-MM"
+  const listsForYear = useMemo(() => {
+    const map: Record<string, MonthlyList> = {};
+    for (const list of allMonthlyLists) {
+      if (list.month.startsWith(`${selectedYear}-`)) {
+        map[list.month] = list;
+      }
+    }
+    return map;
+  }, [allMonthlyLists, selectedYear]);
 
-  // Wanting items from wishlist
+  // All item IDs already allocated to any month across all years
+  const allocatedItemIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const list of allMonthlyLists) {
+      for (const id of list.itemIds ?? []) {
+        set.add(id);
+      }
+    }
+    return set;
+  }, [allMonthlyLists]);
+
+  // Sidebar items: WANTING and not yet allocated
   const wantingItems = useMemo(
     () => wishlist.filter((w) => w.status === "WANTING"),
-    [wishlist]
+    [wishlist],
   );
 
-  // Total cost of current list
-  const totalCost = useMemo(() => {
-    if (!currentList?.items) return 0;
-    return currentList.items.reduce(
-      (sum, item) =>
-        sum + (item.currentPrice ?? item.wishlistItem?.targetPrice ?? 0),
-      0
-    );
-  }, [currentList]);
+  // Wishlist map for quick lookup
+  const wishlistMap = useMemo(() => {
+    const m: Record<string, WishlistItem> = {};
+    for (const item of wishlist) m[item.id] = item;
+    return m;
+  }, [wishlist]);
 
+  // ---------------------------------------------------------------------------
   // Mutation
-  const createList = useMutation({
+  // ---------------------------------------------------------------------------
+
+  const upsertList = useMutation({
     mutationFn: (data: {
       month: string;
       budget?: number;
@@ -147,302 +174,416 @@ export default function MonthlyListPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }).then((r) => {
-        if (!r.ok) throw new Error("Erro ao criar lista");
+        if (!r.ok) throw new Error("Erro ao salvar lista");
         return r.json();
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["monthly-list"] });
-      toast.success("Lista mensal criada!");
-      resetForm();
-      setDialogOpen(false);
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ["monthly-list"] });
+      const previous =
+        queryClient.getQueryData<MonthlyList[]>(["monthly-list"]) ?? [];
+
+      // Optimistic update
+      const idx = previous.findIndex((l) => l.month === newData.month);
+      let next: MonthlyList[];
+      if (idx >= 0) {
+        next = [...previous];
+        next[idx] = { ...next[idx], ...newData };
+      } else {
+        next = [
+          ...previous,
+          {
+            id: `temp-${newData.month}`,
+            month: newData.month,
+            budget: newData.budget,
+            itemIds: newData.itemIds,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      }
+      queryClient.setQueryData(["monthly-list"], next);
+      return { previous };
     },
-    onError: () => {
-      toast.error("Erro ao criar lista mensal.");
+    onError: (_err, _data, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(["monthly-list"], ctx.previous);
+      }
+      toast.error("Erro ao salvar lista mensal.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["monthly-list"] });
     },
   });
 
-  function resetForm() {
-    setSelectedMonth(getCurrentMonth());
-    setBudget("");
-    setSelectedWishlistIds([]);
-  }
+  // ---------------------------------------------------------------------------
+  // Helpers for mutations
+  // ---------------------------------------------------------------------------
 
-  function handleCreate() {
-    if (selectedWishlistIds.length === 0) {
-      toast.error("Selecione pelo menos um item da wishlist.");
+  const getListData = useCallback(
+    (month: string) => {
+      const existing = listsForYear[month];
+      return {
+        itemIds: existing?.itemIds ?? [],
+        budget: existing?.budget ?? DEFAULT_BUDGET,
+      };
+    },
+    [listsForYear],
+  );
+
+  function addItemToMonth(wishlistItemId: string, month: string) {
+    const { itemIds, budget } = getListData(month);
+    if (itemIds.includes(wishlistItemId)) {
+      toast.error("Este album ja esta neste mes.");
       return;
     }
-    createList.mutate({
-      month: selectedMonth,
-      budget: budget ? parseFloat(budget) : undefined,
-      itemIds: selectedWishlistIds,
+    upsertList.mutate({
+      month,
+      budget,
+      itemIds: [...itemIds, wishlistItemId],
     });
+    toast.success("Album alocado!");
   }
 
-  function toggleWishlistItem(id: string) {
-    setSelectedWishlistIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+  function removeItemFromMonth(wishlistItemId: string, month: string) {
+    const { itemIds, budget } = getListData(month);
+    upsertList.mutate({
+      month,
+      budget,
+      itemIds: itemIds.filter((id) => id !== wishlistItemId),
+    });
+    toast.success("Album removido do mes.");
   }
+
+  function saveBudget(month: string, value: string) {
+    const parsed = parseFloat(value);
+    const { itemIds } = getListData(month);
+    upsertList.mutate({
+      month,
+      budget: isNaN(parsed) || parsed <= 0 ? DEFAULT_BUDGET : parsed,
+      itemIds,
+    });
+    setEditingBudget(null);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Drag handlers
+  // ---------------------------------------------------------------------------
+
+  function handleDragStart(e: DragEvent, item: WishlistItem) {
+    e.dataTransfer.setData("text/plain", item.id);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedItemId(item.id);
+  }
+
+  function handleDragOver(e: DragEvent, month: string) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverMonth(month);
+  }
+
+  function handleDragLeave() {
+    setDragOverMonth(null);
+  }
+
+  function handleDrop(e: DragEvent, month: string) {
+    e.preventDefault();
+    setDragOverMonth(null);
+    setDraggedItemId(null);
+    const wishlistItemId = e.dataTransfer.getData("text/plain");
+    if (wishlistItemId) {
+      addItemToMonth(wishlistItemId, month);
+    }
+  }
+
+  function handleDragEnd() {
+    setDraggedItemId(null);
+    setDragOverMonth(null);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Budget helpers per month
+  // ---------------------------------------------------------------------------
+
+  function monthSpent(month: string) {
+    const list = listsForYear[month];
+    if (!list?.itemIds) return 0;
+    return list.itemIds.reduce((sum, id) => {
+      const item = wishlistMap[id];
+      return sum + (item ? getPrice(item) : 0);
+    }, 0);
+  }
+
+  function monthBudget(month: string) {
+    return listsForYear[month]?.budget ?? DEFAULT_BUDGET;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   const content = (
-    <div className="min-h-screen bg-background p-6 md:p-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">
-          Lista <span className="text-primary">Mensal</span>
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Planeje suas compras mensais de vinil com orcamento.
-        </p>
+    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-10">
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Planejamento <span className="text-primary">Mensal</span>
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            Arraste albuns da wishlist para os meses e controle seu orcamento.
+          </p>
+        </div>
+
+        {/* Year selector */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => setSelectedYear((y) => y - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-[4rem] text-center text-lg font-bold text-foreground">
+            {selectedYear}
+          </span>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => setSelectedYear((y) => y + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Current Month Summary */}
-      {currentList && currentList.items && (
-        <Card className="bg-card border-border mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  {getMonthLabel(currentList.month)}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {currentList.items.length} item
-                  {currentList.items.length !== 1 ? "s" : ""} na lista
-                </CardDescription>
-              </div>
-              {currentList.budget && (
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Orcamento</p>
-                  <p className="text-lg font-bold text-foreground">
-                    R$ {currentList.budget.toFixed(2)}
-                  </p>
-                  <p
-                    className={`text-xs font-medium ${
-                      totalCost > currentList.budget
-                        ? "text-destructive"
-                        : "text-primary"
-                    }`}
-                  >
-                    {totalCost > currentList.budget ? "Acima" : "Dentro"} do
-                    orcamento (R$ {totalCost.toFixed(2)})
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
+      {/* Main layout: sidebar + calendar */}
+      <div className="flex flex-col gap-4 lg:flex-row">
+        {/* ====== SIDEBAR ====== */}
+        <div className="w-full shrink-0 lg:w-[280px]">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Wishlist
+          </h2>
+
+          {loadingWishlist ? (
             <div className="space-y-3">
-              {currentList.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 rounded-lg bg-background/50 p-3 border border-border"
-                >
-                  {item.wishlistItem?.album?.coverUrl ? (
-                    <img
-                      src={item.wishlistItem.album.coverUrl}
-                      alt={item.wishlistItem.album.title}
-                      className="h-12 w-12 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                      <Disc3 className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {item.wishlistItem?.album?.title ?? "Album"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.wishlistItem?.album?.artist?.name ?? "Artista"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">
-                      R${" "}
-                      {(
-                        item.currentPrice ??
-                        item.wishlistItem?.targetPrice ??
-                        0
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-foreground">
-          Todas as listas
-        </h2>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger
-            render={
-              <Button size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Criar Lista
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Lista Mensal</DialogTitle>
-              <DialogDescription>
-                Selecione o mes, defina um orcamento e escolha os itens da
-                wishlist.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="month">Mes</Label>
-                <Input
-                  id="month"
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="budget">Orcamento (R$)</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  step="0.01"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  placeholder="Ex: 500.00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Itens da Wishlist</Label>
-                {wantingItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum item na wishlist. Adicione primeiro.
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {wantingItems.map((item) => (
-                      <label
-                        key={item.id}
-                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                          selectedWishlistIds.includes(item.id)
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-background/50"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedWishlistIds.includes(item.id)}
-                          onChange={() => toggleWishlistItem(item.id)}
-                          className="sr-only"
+          ) : wantingItems.length === 0 ? (
+            <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              <Disc3 className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+              Nenhum item na wishlist.
+            </div>
+          ) : (
+            <div className="flex flex-row gap-3 overflow-x-auto pb-2 lg:flex-col lg:overflow-x-visible lg:pb-0">
+              {wantingItems.map((item) => {
+                const isAllocated = allocatedItemIds.has(item.id);
+                const isBeingDragged = draggedItemId === item.id;
+                return (
+                  <Card
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    onDragEnd={handleDragEnd}
+                    className={`min-w-[200px] cursor-grab border-border bg-card transition-opacity active:cursor-grabbing lg:min-w-0 ${
+                      isAllocated ? "opacity-40" : ""
+                    } ${isBeingDragged ? "opacity-50 ring-2 ring-primary" : ""}`}
+                  >
+                    <CardContent className="flex items-center gap-3 p-3">
+                      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      {item.album?.coverUrl ? (
+                        <img
+                          src={item.album.coverUrl}
+                          alt={item.album.title}
+                          className="h-10 w-10 shrink-0 rounded-md object-cover"
+                          draggable={false}
                         />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {item.album?.title ?? "Album"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.album?.artist?.name ?? "Artista"}
-                            {item.targetPrice &&
-                              ` — R$ ${item.targetPrice.toFixed(2)}`}
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/20">
+                          <Disc3 className="h-5 w-5 text-primary" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {item.album?.title ?? "Album"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {item.album?.artist?.name ?? "Artista"}
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-primary">
+                          R$ {getPrice(item).toFixed(2)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ====== CALENDAR GRID ====== */}
+        <div className="flex-1">
+          {loadingLists ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {[...Array(12)].map((_, i) => (
+                <Skeleton key={i} className="h-48 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {Array.from({ length: 12 }, (_, i) => {
+                const month = i + 1;
+                const mk = monthKey(selectedYear, month);
+                const spent = monthSpent(mk);
+                const budget = monthBudget(mk);
+                const remaining = budget - spent;
+                const overBudget = remaining < 0;
+                const list = listsForYear[mk];
+                const isDragOver = dragOverMonth === mk;
+
+                return (
+                  <div
+                    key={mk}
+                    onDragOver={(e) => handleDragOver(e, mk)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, mk)}
+                    className={`flex min-h-[200px] flex-col rounded-lg border bg-card p-3 transition-colors ${
+                      overBudget
+                        ? "border-destructive"
+                        : isDragOver
+                          ? "border-primary bg-primary/10"
+                          : "border-border"
+                    }`}
+                  >
+                    {/* Month header */}
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-bold text-foreground">
+                        {MONTH_LABELS[i]}
+                      </span>
+                      {overBudget && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                      )}
+                    </div>
+
+                    {/* Budget bar */}
+                    <div className="mb-2">
+                      {editingBudget === mk ? (
+                        <input
+                          type="number"
+                          autoFocus
+                          className="w-full rounded border border-input bg-background px-1.5 py-0.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
+                          defaultValue={budget}
+                          onBlur={(e) => saveBudget(mk, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              saveBudget(mk, (e.target as HTMLInputElement).value);
+                            }
+                            if (e.key === "Escape") {
+                              setEditingBudget(null);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditingBudget(mk)}
+                          className="group w-full text-left"
+                        >
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>
+                              R${spent.toFixed(0)}{" "}
+                              <span className="text-muted-foreground/60">
+                                / {budget.toFixed(0)}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                overBudget ? "bg-destructive" : "bg-primary"
+                              }`}
+                              style={{
+                                width: `${Math.min((spent / budget) * 100, 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </button>
+                      )}
+
+                      {overBudget && (
+                        <p className="mt-1 text-[10px] font-medium text-destructive">
+                          Acima: R${Math.abs(remaining).toFixed(2)}
+                        </p>
+                      )}
+                      {!overBudget && spent > 0 && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          Sobra: R${remaining.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Allocated albums */}
+                    <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
+                      {(list?.itemIds ?? []).map((itemId) => {
+                        const wi = wishlistMap[itemId];
+                        if (!wi) return null;
+                        return (
+                          <div
+                            key={itemId}
+                            className="group/item flex items-center gap-1.5 rounded-md bg-background/60 p-1.5"
+                          >
+                            {wi.album?.coverUrl ? (
+                              <img
+                                src={wi.album.coverUrl}
+                                alt={wi.album.title}
+                                className="h-6 w-6 shrink-0 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/20">
+                                <Disc3 className="h-3 w-3 text-primary" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[11px] font-medium text-foreground">
+                                {wi.album?.title ?? "Album"}
+                              </p>
+                              <p className="truncate text-[10px] text-muted-foreground">
+                                R${getPrice(wi).toFixed(2)}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeItemFromMonth(itemId, mk)}
+                              className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/20 group-hover/item:opacity-100"
+                            >
+                              <X className="h-3 w-3 text-destructive" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Empty state */}
+                      {(!list?.itemIds || list.itemIds.length === 0) && (
+                        <div className="flex flex-1 items-center justify-center">
+                          <p className="text-center text-[10px] text-muted-foreground/60">
+                            Arraste albuns aqui
                           </p>
                         </div>
-                        <div
-                          className={`h-4 w-4 rounded border ${
-                            selectedWishlistIds.includes(item.id)
-                              ? "bg-primary border-primary"
-                              : "border-muted-foreground"
-                          }`}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={handleCreate}
-                disabled={createList.isPending}
-              >
-                {createList.isPending ? "Criando..." : "Criar Lista"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* All lists */}
-      {loadingLists ? (
-        <div className="space-y-4">
-          {[...Array(2)].map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : monthlyLists.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-          <p>Nenhuma lista mensal criada. Comece planejando suas compras!</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {monthlyLists.map((list) => (
-            <Card key={list.id} className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <p className="font-semibold text-foreground">
-                      {getMonthLabel(list.month)}
-                    </p>
-                    <Badge variant="secondary">
-                      {(list.items?.length ?? list.itemIds?.length ?? 0)} item
-                      {(list.items?.length ?? list.itemIds?.length ?? 0) !== 1 ? "s" : ""}
-                    </Badge>
-                    {list.status && (
-                      <Badge
-                        variant={
-                          list.status === "FINALIZED" ? "default" : "outline"
-                        }
-                      >
-                        {list.status === "FINALIZED" ? "Finalizada" : "Rascunho"}
-                      </Badge>
-                    )}
-                  </div>
-                  {list.budget && (
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <DollarSign className="h-4 w-4" />
-                      R$ {list.budget.toFixed(2)}
+                      )}
                     </div>
-                  )}
-                </div>
-                {list.items && list.items.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {list.items.map((item) => (
-                      <Badge key={item.id} variant="outline">
-                        {item.wishlistItem?.album?.title ?? "Album"}
-                      </Badge>
-                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 
-  // Wrap in PaywallGate for FREE users
   if (isFree) {
-    return (
-      <PaywallGate hasAccess={false}>
-        {content}
-      </PaywallGate>
-    );
+    return <PaywallGate hasAccess={false}>{content}</PaywallGate>;
   }
 
   return content;

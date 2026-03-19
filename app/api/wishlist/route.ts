@@ -96,3 +96,62 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || !status) {
+      return NextResponse.json(
+        { error: "Missing id or status" },
+        { status: 400 }
+      );
+    }
+
+    const item = await db.wishlistItem.update({
+      where: { id },
+      data: { status },
+      include: { album: { include: { artist: true } } },
+    });
+
+    return NextResponse.json(item);
+  } catch (error) {
+    console.error("[WISHLIST_PATCH]", error);
+    return NextResponse.json(
+      { error: "Failed to update" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    }
+
+    await db.wishlistItem.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[WISHLIST_DELETE]", error);
+    return NextResponse.json(
+      { error: "Failed to delete" },
+      { status: 500 }
+    );
+  }
+}
