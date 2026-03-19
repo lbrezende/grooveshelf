@@ -2,7 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Gravity, { MatterBody } from "@/components/fancy/physics/gravity";
 import Link from "next/link";
+
+const gravityWords = [
+  { text: "disco", color: "bg-primary", x: "15%", y: "5%" },
+  { text: "vinil", color: "bg-[#533483]", x: "75%", y: "8%" },
+  { text: "música", color: "bg-primary", x: "40%", y: "3%" },
+  { text: "paixão", color: "bg-[#0F3460]", x: "60%", y: "10%" },
+  { text: "favorito", color: "bg-[#533483]", x: "25%", y: "6%" },
+];
 
 const features = [
   {
@@ -76,29 +85,51 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block mb-6 text-6xl">🎸</div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-            Sua coleção de vinil
-            <br />
-            <span className="text-primary">começa antes da compra</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Descubra, acompanhe e priorize os vinis que você realmente quer —
-            com base no que você mais ouve.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/login">
-              <Button size="lg" className="text-lg px-8 py-6">
-                Começar grátis
-              </Button>
-            </Link>
-            <Link href="#features">
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                Ver features
-              </Button>
-            </Link>
+      <section className="pt-24 pb-0 px-6 relative">
+        <div className="max-w-5xl mx-auto relative" style={{ height: "600px" }}>
+          {/* Gravity falling words */}
+          <Gravity gravity={{ x: 0, y: 1 }} className="absolute inset-0 z-0" grabCursor>
+            {gravityWords.map((word) => (
+              <MatterBody
+                key={word.text}
+                x={word.x}
+                y={word.y}
+                matterBodyOptions={{ friction: 0.5, restitution: 0.3, density: 0.002 }}
+                isDraggable
+              >
+                <span
+                  className={`${word.color} text-white text-sm md:text-base font-bold px-5 py-2.5 rounded-full select-none cursor-grab active:cursor-grabbing shadow-lg`}
+                >
+                  {word.text}
+                </span>
+              </MatterBody>
+            ))}
+          </Gravity>
+
+          {/* Hero content on top */}
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+            <div className="inline-block mb-6 text-6xl">🎸</div>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-center">
+              Sua coleção de vinil
+              <br />
+              <span className="text-primary">começa antes da compra</span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto text-center">
+              Descubra, acompanhe e priorize os vinis que você realmente quer —
+              com base no que você mais ouve.
+            </p>
+            <div className="flex gap-4 justify-center pointer-events-auto">
+              <Link href="/login">
+                <Button size="lg" className="text-lg px-8 py-6">
+                  Começar grátis
+                </Button>
+              </Link>
+              <Link href="#features">
+                <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                  Ver features
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
