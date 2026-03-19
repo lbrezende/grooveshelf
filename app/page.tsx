@@ -10,7 +10,7 @@ import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
 import { AlbumCarousel } from "@/components/ui/cases-with-infinite-scroll";
 import InteractiveBentoGallery from "@/components/ui/interactive-bento-gallery";
 import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
-import { PricingCard } from "@/components/ui/single-pricing-card";
+import { SquishyPricing } from "@/components/ui/squishy-pricing";
 import { motion } from "framer-motion";
 
 // Three.js Hyperspeed — only loaded after user scrolls (zero impact on PageSpeed)
@@ -515,7 +515,7 @@ export default function LandingPage() {
               Comece grátis, faça upgrade quando quiser.
             </p>
           </motion.div>
-          <PricingCard />
+          <SquishyPricing />
         </div>
       </section>
 
