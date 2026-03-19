@@ -1,5 +1,5 @@
+// @ts-nocheck
 "use client"
-// @ts-nocheck — third-party component from fancycomponents.dev
 
 import {
   createContext,
