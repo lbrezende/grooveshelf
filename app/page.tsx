@@ -228,20 +228,20 @@ function HeroSection() {
               {/* Main content area — skeleton using muted tokens */}
               <div className="flex-1 p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-muted/50" />
+                  <div className="w-10 h-10 rounded-full bg-foreground/10" />
                   <div className="flex flex-col gap-1.5">
-                    <div className="w-32 h-3 rounded bg-muted/60" />
-                    <div className="w-20 h-2.5 rounded bg-muted/30" />
+                    <div className="w-32 h-3 rounded bg-foreground/15" />
+                    <div className="w-20 h-2.5 rounded bg-foreground/8" />
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="w-full h-3 rounded bg-muted/50" />
-                  <div className="w-[85%] h-3 rounded bg-muted/30" />
-                  <div className="w-[70%] h-3 rounded bg-muted/50" />
-                  <div className="w-[60%] h-3 rounded bg-muted/20" />
+                  <div className="w-full h-3 rounded bg-foreground/12" />
+                  <div className="w-[85%] h-3 rounded bg-foreground/8" />
+                  <div className="w-[70%] h-3 rounded bg-foreground/12" />
+                  <div className="w-[60%] h-3 rounded bg-foreground/6" />
                 </div>
                 <div className="mt-6">
-                  <div className="w-24 h-8 rounded-lg bg-muted/40" />
+                  <div className="w-24 h-8 rounded-lg bg-foreground/10" />
                 </div>
               </div>
             </div>
