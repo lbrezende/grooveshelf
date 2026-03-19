@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, Suspense, useState } from "react";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TextHighlighter } from "@/components/fancy/text/text-highlighter";
 import Link from "next/link";
-
-const Hyperspeed = dynamic(() => import("@/components/Hyperspeed"), { ssr: false });
 
 const features = [
   {
@@ -62,82 +58,28 @@ const pricingFeatures = {
   ],
 };
 
-// Cyberpunk Hyperspeed — purple/cyan/magenta like reactbits.dev
-const cyberpunkHyperspeed = {
-  onSpeedUp: () => {},
-  onSlowDown: () => {},
-  distortion: "turbulentDistortion" as const,
-  length: 400,
-  roadWidth: 10,
-  islandWidth: 2,
-  lanesPerRoad: 3,
-  fov: 90,
-  fovSpeedUp: 150,
-  speedUp: 2,
-  carLightsFade: 0.4,
-  totalSideLightSticks: 20,
-  lightPairsPerRoadWay: 40,
-  shoulderLinesWidthPercentage: 0.05,
-  brokenLinesWidthPercentage: 0.1,
-  brokenLinesLengthPercentage: 0.5,
-  lightStickWidth: [0.12, 0.5] as [number, number],
-  lightStickHeight: [1.3, 1.7] as [number, number],
-  movingAwaySpeed: [60, 80] as [number, number],
-  movingCloserSpeed: [-120, -160] as [number, number],
-  carLightsLength: [400 * 0.03, 400 * 0.2] as [number, number],
-  carLightsRadius: [0.05, 0.14] as [number, number],
-  carWidthPercentage: [0.3, 0.5] as [number, number],
-  carShiftX: [-0.8, 0.8] as [number, number],
-  carFloorSeparation: [0, 5] as [number, number],
-  colors: {
-    roadColor: 0x080808,
-    islandColor: 0x0a0a0a,
-    background: 0x000000,
-    shoulderLines: 0x131318,
-    brokenLines: 0x131318,
-    leftCars: [0xff00ff, 0xcc00ff, 0xff66cc, 0xff33aa],
-    rightCars: [0x00ffff, 0x00ccff, 0x33ffff, 0x00e5ff],
-    sticks: 0x5500aa,
-  },
-};
-
 function HeroSection() {
-  const [showHyperspeed, setShowHyperspeed] = useState(false);
-
-  // Load Hyperspeed after 2s idle to not block initial render
-  useEffect(() => {
-    const timer = setTimeout(() => setShowHyperspeed(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <section
       className="relative overflow-hidden bg-background"
       style={{ minHeight: "100vh" }}
     >
-      {/* Static gradient fallback — shows instantly, no JS needed */}
+      {/* CSS-only speed lines — zero JS, pure performance */}
+      <div className="absolute inset-0 z-0 hero-speed-lines" />
+
+      {/* Bottom glow — radial gradient */}
       <div
         className="absolute inset-0 z-0"
         style={{
-          background: "radial-gradient(ellipse 80% 60% at 50% 100%, color-mix(in srgb, var(--primary) 15%, transparent) 0%, color-mix(in srgb, var(--accent) 8%, transparent) 40%, var(--background) 70%)",
+          background: "radial-gradient(ellipse 90% 50% at 50% 100%, color-mix(in srgb, var(--accent) 20%, transparent) 0%, color-mix(in srgb, var(--primary) 10%, transparent) 30%, transparent 60%)",
         }}
       />
 
-      {/* Hyperspeed 3D — loaded after 2s to not block FCP/LCP */}
-      {showHyperspeed && (
-        <div className="absolute inset-0 z-0 animate-[fadeIn_1s_ease-in]">
-          <Suspense fallback={null}>
-            <Hyperspeed effectOptions={cyberpunkHyperspeed} />
-          </Suspense>
-        </div>
-      )}
-
-      {/* Gradient overlay for readability */}
+      {/* Top fade for text readability */}
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
-          background:
-            "linear-gradient(to bottom, color-mix(in srgb, var(--background) 60%, transparent) 0%, transparent 40%, transparent 60%, color-mix(in srgb, var(--background) 80%, transparent) 100%)",
+          background: "linear-gradient(to bottom, var(--background) 0%, transparent 30%, transparent 70%, color-mix(in srgb, var(--background) 80%, transparent) 100%)",
         }}
       />
 

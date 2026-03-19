@@ -87,6 +87,52 @@
 }
 /* === END GENERATED === */
 
+/* Hero speed lines — CSS only, zero JS */
+@keyframes speedLine {
+  0% { transform: translateY(-100%) scaleY(0.5); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh) scaleY(1.5); opacity: 0; }
+}
+
+.hero-speed-lines {
+  background:
+    linear-gradient(180deg, transparent 0%, transparent 48%, var(--primary) 49%, var(--primary) 51%, transparent 52%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, transparent 48%, var(--accent) 49%, var(--accent) 51%, transparent 52%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, transparent 48%, color-mix(in srgb, var(--primary) 60%, var(--accent)) 49%, color-mix(in srgb, var(--primary) 60%, var(--accent)) 51%, transparent 52%, transparent 100%);
+  background-size: 2px 300px, 1px 250px, 1px 200px;
+  background-position: 20% 0, 50% 50px, 80% 100px;
+  background-repeat: repeat-y;
+  opacity: 0.08;
+  animation: speedLine 4s linear infinite;
+}
+
+.hero-speed-lines::before,
+.hero-speed-lines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 0%, transparent 48%, var(--accent) 49%, var(--accent) 51%, transparent 52%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, transparent 48%, var(--primary) 49%, var(--primary) 51%, transparent 52%, transparent 100%);
+  background-size: 1px 350px, 2px 280px;
+  background-repeat: repeat-y;
+}
+
+.hero-speed-lines::before {
+  background-position: 35% 0, 65% 80px;
+  opacity: 0.06;
+  animation: speedLine 3s linear infinite;
+  animation-delay: -1s;
+}
+
+.hero-speed-lines::after {
+  background-position: 10% 40px, 90% 0;
+  opacity: 0.04;
+  animation: speedLine 5s linear infinite;
+  animation-delay: -2s;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
