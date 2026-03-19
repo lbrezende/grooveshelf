@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
   createContext,
@@ -167,10 +167,12 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
         const y = calculatePosition(props.y, canvasRect.height, height)
 
         let body
+        const bodyOpts = { ...props.matterBodyOptions } as any
+        if (bodyOpts.chamfer === null) delete bodyOpts.chamfer
         if (props.bodyType === "circle") {
           const radius = Math.max(width, height) / 2
           body = Bodies.circle(x, y, radius, {
-            ...props.matterBodyOptions,
+            ...bodyOpts,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",
@@ -189,7 +191,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
           })
 
           body = Bodies.fromVertices(x, y, vertexSets, {
-            ...props.matterBodyOptions,
+            ...bodyOpts,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",
@@ -199,7 +201,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
           })
         } else {
           body = Bodies.rectangle(x, y, width, height, {
-            ...props.matterBodyOptions,
+            ...bodyOpts,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",
