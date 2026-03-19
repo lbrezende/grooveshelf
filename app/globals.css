@@ -87,6 +87,11 @@
 }
 /* === END GENERATED === */
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Hero speed lines — CSS only, zero JS */
 @keyframes speedLine {
   0% { transform: translateY(-100%) scaleY(0.5); opacity: 0; }

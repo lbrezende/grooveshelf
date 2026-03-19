@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect, useRef, useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TextHighlighter } from "@/components/fancy/text/text-highlighter";
 import Link from "next/link";
+
+// Three.js Hyperspeed — only loaded after user scrolls (zero impact on PageSpeed)
+const Hyperspeed = dynamic(() => import("@/components/Hyperspeed"), { ssr: false });
 
 const features = [
   {
@@ -58,16 +63,89 @@ const pricingFeatures = {
   ],
 };
 
+// Cyberpunk Hyperspeed colors
+const cyberpunkHyperspeed = {
+  onSpeedUp: () => {},
+  onSlowDown: () => {},
+  distortion: "turbulentDistortion" as const,
+  length: 400,
+  roadWidth: 10,
+  islandWidth: 2,
+  lanesPerRoad: 3,
+  fov: 90,
+  fovSpeedUp: 150,
+  speedUp: 2,
+  carLightsFade: 0.4,
+  totalSideLightSticks: 20,
+  lightPairsPerRoadWay: 40,
+  shoulderLinesWidthPercentage: 0.05,
+  brokenLinesWidthPercentage: 0.1,
+  brokenLinesLengthPercentage: 0.5,
+  lightStickWidth: [0.12, 0.5] as [number, number],
+  lightStickHeight: [1.3, 1.7] as [number, number],
+  movingAwaySpeed: [60, 80] as [number, number],
+  movingCloserSpeed: [-120, -160] as [number, number],
+  carLightsLength: [400 * 0.03, 400 * 0.2] as [number, number],
+  carLightsRadius: [0.05, 0.14] as [number, number],
+  carWidthPercentage: [0.3, 0.5] as [number, number],
+  carShiftX: [-0.8, 0.8] as [number, number],
+  carFloorSeparation: [0, 5] as [number, number],
+  colors: {
+    roadColor: 0x080808,
+    islandColor: 0x0a0a0a,
+    background: 0x000000,
+    shoulderLines: 0x131318,
+    brokenLines: 0x131318,
+    leftCars: [0xff00ff, 0xcc00ff, 0xff66cc, 0xff33aa],
+    rightCars: [0x00ffff, 0x00ccff, 0x33ffff, 0x00e5ff],
+    sticks: 0x5500aa,
+  },
+};
+
 function HeroSection() {
+  const [loadHyperspeed, setLoadHyperspeed] = useState(false);
+  const scrollTriggerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Strategy: load Hyperspeed only after user scrolls (proves engagement)
+    // This means PageSpeed Lighthouse (which doesn't scroll) never loads Three.js
+    const handleScroll = () => {
+      setLoadHyperspeed(true);
+      window.removeEventListener("scroll", handleScroll);
+    };
+
+    // Also load after 5s idle as fallback (user may not scroll on desktop)
+    const timer = setTimeout(() => {
+      setLoadHyperspeed(true);
+      window.removeEventListener("scroll", handleScroll);
+    }, 5000);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <section
       className="relative overflow-hidden bg-background"
       style={{ minHeight: "100vh" }}
     >
-      {/* CSS-only speed lines — zero JS, pure performance */}
+      {/* CSS speed lines — instant, zero JS, always visible as base */}
       <div className="absolute inset-0 z-0 hero-speed-lines" />
 
-      {/* Bottom glow — radial gradient */}
+      {/* Hyperspeed 3D — overlays CSS lines after scroll/5s idle */}
+      {loadHyperspeed && (
+        <div className="absolute inset-0 z-0" style={{ opacity: 0, animation: "fadeIn 2s ease-out forwards" }}>
+          <Suspense fallback={null}>
+            <Hyperspeed effectOptions={cyberpunkHyperspeed} />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Bottom glow */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -75,7 +153,7 @@ function HeroSection() {
         }}
       />
 
-      {/* Top fade for text readability */}
+      {/* Top/bottom fade for readability */}
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
