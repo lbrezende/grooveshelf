@@ -1,5 +1,4 @@
 "use client"
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
   createContext,
@@ -49,7 +48,7 @@ type PhysicsBody = {
 
 type MatterBodyProps = {
   children: ReactNode
-  matterBodyOptions?: Matter.IBodyDefinition
+  matterBodyOptions?: Omit<Matter.IBodyDefinition, "chamfer"> & { chamfer?: Matter.IChamfer }
   isDraggable?: boolean
   bodyType?: "rectangle" | "circle" | "svg"
   sampleLength?: number
@@ -167,12 +166,10 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
         const y = calculatePosition(props.y, canvasRect.height, height)
 
         let body
-        const bodyOpts = { ...props.matterBodyOptions } as any
-        if (bodyOpts.chamfer === null) delete bodyOpts.chamfer
         if (props.bodyType === "circle") {
           const radius = Math.max(width, height) / 2
           body = Bodies.circle(x, y, radius, {
-            ...bodyOpts,
+            ...props.matterBodyOptions,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",
@@ -191,7 +188,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
           })
 
           body = Bodies.fromVertices(x, y, vertexSets, {
-            ...bodyOpts,
+            ...props.matterBodyOptions,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",
@@ -201,7 +198,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
           })
         } else {
           body = Bodies.rectangle(x, y, width, height, {
-            ...bodyOpts,
+            ...props.matterBodyOptions,
             angle: angle,
             render: {
               fillStyle: debug ? "#888888" : "#00000000",

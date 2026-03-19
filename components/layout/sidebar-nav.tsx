@@ -28,15 +28,15 @@ export function SidebarNav({ className, onNavClick }: SidebarNavProps) {
   return (
     <nav
       className={cn(
-        "flex h-full flex-col bg-[#1A1A2E]",
+        "flex h-full flex-col bg-sidebar",
         className
       )}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5">
-        <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#E94560]">
-          <div className="h-3 w-3 rounded-full bg-[#1A1A2E]" />
-          <div className="absolute h-1 w-1 rounded-full bg-[#E94560]" />
+        <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+          <div className="h-3 w-3 rounded-full bg-card" />
+          <div className="absolute h-1 w-1 rounded-full bg-primary" />
         </div>
         <span className="text-lg font-bold text-white">GrooveShelf</span>
       </div>
@@ -57,7 +57,7 @@ export function SidebarNav({ className, onNavClick }: SidebarNavProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-[#E94560]/10 text-[#E94560]"
+                  ? "bg-primary/10 text-primary"
                   : "text-zinc-400 hover:bg-white/5 hover:text-white"
               )}
             >
@@ -86,7 +86,7 @@ export function SidebarNav({ className, onNavClick }: SidebarNavProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-[#E94560]/10 text-[#E94560]"
+                  ? "bg-primary/10 text-primary"
                   : "text-zinc-400 hover:bg-white/5 hover:text-white"
               )}
             >

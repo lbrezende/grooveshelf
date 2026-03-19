@@ -50,8 +50,8 @@ export default function AuthLayout({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0F0F0F]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E94560] border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -66,7 +66,7 @@ export default function AuthLayout({
   const trialDaysLeft = isTrialPlan ? getTrialDaysLeft(user?.trialEndsAt ?? null) : null;
 
   return (
-    <div className="flex min-h-screen bg-[#0F0F0F]">
+    <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r border-white/5 md:block">
         <SidebarNav className="h-full" />
@@ -92,7 +92,7 @@ export default function AuthLayout({
                 <span className="text-lg">&#9776;</span>
                 <span className="sr-only">Menu</span>
               </SheetTrigger>
-              <SheetContent side="left" className="w-60 bg-[#1A1A2E] p-0">
+              <SheetContent side="left" className="w-60 bg-card p-0">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 <SidebarNav onNavClick={() => setMobileOpen(false)} />
               </SheetContent>
@@ -113,7 +113,7 @@ export default function AuthLayout({
                 {user?.name ?? user?.email}
               </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-[#1A1A2E] text-white border-white/10">
+            <DropdownMenuContent align="end" className="w-48 bg-card text-white border-white/10">
               <DropdownMenuItem className="text-zinc-400 focus:bg-white/5 focus:text-white" disabled>
                 {user?.email}
               </DropdownMenuItem>

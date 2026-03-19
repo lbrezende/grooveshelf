@@ -32,11 +32,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0F0F0F] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-[#E94560]/5 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#E94560]/5 blur-3xl" />
+        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -44,14 +44,14 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           {/* Vinyl record decorative icon */}
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#1A1A2E] to-[#0F0F0F] ring-2 ring-[#E94560]/30">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-card to-background ring-2 ring-primary/30">
               {/* Outer grooves */}
               <div className="absolute h-16 w-16 rounded-full border border-white/5" />
               <div className="absolute h-12 w-12 rounded-full border border-white/5" />
               {/* Center label */}
-              <div className="h-6 w-6 rounded-full bg-[#E94560]" />
+              <div className="h-6 w-6 rounded-full bg-primary" />
               {/* Spindle hole */}
-              <div className="absolute h-1.5 w-1.5 rounded-full bg-[#0F0F0F]" />
+              <div className="absolute h-1.5 w-1.5 rounded-full bg-background" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-white">GrooveShelf</h1>
@@ -60,7 +60,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Card className="border-0 bg-[#1A1A2E] ring-white/5">
+        <Card className="border-0 bg-card ring-white/5">
           <CardHeader className="text-center">
             <CardTitle className="text-lg text-white">Entrar</CardTitle>
             <CardDescription className="text-zinc-400">
@@ -106,8 +106,8 @@ export default function LoginPage() {
 
             {/* Email Magic Link */}
             {emailSent ? (
-              <div className="rounded-lg border border-[#E94560]/20 bg-[#E94560]/5 p-4 text-center">
-                <p className="text-sm font-medium text-[#E94560]">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-center">
+                <p className="text-sm font-medium text-primary">
                   Link enviado!
                 </p>
                 <p className="mt-1 text-xs text-zinc-400">
@@ -122,12 +122,12 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-[#E94560] focus-visible:ring-[#E94560]/20"
+                  className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus-visible:border-primary focus-visible:ring-primary/20"
                 />
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-10 w-full bg-[#E94560] text-white hover:bg-[#E94560]/90"
+                  className="h-10 w-full bg-primary text-white hover:bg-primary/90"
                 >
                   {loading ? "Enviando..." : "Entrar com magic link"}
                 </Button>
@@ -138,11 +138,11 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-zinc-500">
           Ao continuar, voce concorda com nossos{" "}
-          <a href="/terms" className="text-[#E94560] hover:underline">
+          <a href="/terms" className="text-primary hover:underline">
             Termos de Uso
           </a>{" "}
           e{" "}
-          <a href="/privacy" className="text-[#E94560] hover:underline">
+          <a href="/privacy" className="text-primary hover:underline">
             Politica de Privacidade
           </a>
           .

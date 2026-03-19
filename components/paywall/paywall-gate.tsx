@@ -29,10 +29,10 @@ export function PaywallGate({
 
   return (
     <div className="flex items-center justify-center py-12">
-      <Card className="w-full max-w-md border-0 bg-[#1A1A2E] text-center ring-white/5">
+      <Card className="w-full max-w-md border-0 bg-card text-center ring-white/5">
         <CardHeader>
           {/* Lock icon */}
-          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[#E94560]/10">
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <span className="text-2xl" aria-hidden>
               &#128274;
             </span>
@@ -44,7 +44,7 @@ export function PaywallGate({
         </CardHeader>
         <CardContent>
           <Link href="/pricing">
-            <Button className="h-10 w-full bg-[#E94560] text-white hover:bg-[#E94560]/90">
+            <Button className="h-10 w-full bg-primary text-white hover:bg-primary/90">
               Ver planos e fazer upgrade
             </Button>
           </Link>
