@@ -20,35 +20,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+    const payload = {
+      from: fromEmail,
+      to: "leandro@bilhon.com",
+      subject: `[GrooveShelf] Contato de ${name}`,
+      reply_to: email,
+      html: `
+        <h2>Novo contato via GrooveShelf</h2>
+        <p><strong>Nome:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <hr />
+        <p>${message.replace(/\n/g, "<br />")}</p>
+      `,
+    };
+
+    console.log("Sending email with from:", fromEmail);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${resendKey}`,
       },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL || "noreply@grooveshelf.com",
-        to: "leandro@bilhon.com",
-        subject: `[GrooveShelf] Contato de ${name}`,
-        reply_to: email,
-        html: `
-          <h2>Novo contato via GrooveShelf</h2>
-          <p><strong>Nome:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <hr />
-          <p>${message.replace(/\n/g, "<br />")}</p>
-        `,
-      }),
+      body: JSON.stringify(payload),
     });
 
+    const responseBody = await res.text();
+
     if (!res.ok) {
-      const err = await res.text();
-      console.error("Resend error:", err);
+      console.error("Resend error:", res.status, responseBody);
       return NextResponse.json(
-        { error: "Falha ao enviar email." },
+        { error: `Falha ao enviar email: ${responseBody}` },
         { status: 500 }
       );
     }
+
+    console.log("Email sent successfully:", responseBody);
 
     return NextResponse.json({ success: true });
   } catch (error) {
