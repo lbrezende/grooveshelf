@@ -11,7 +11,12 @@ import { AlbumCarousel } from "@/components/ui/cases-with-infinite-scroll";
 import InteractiveBentoGallery from "@/components/ui/interactive-bento-gallery";
 import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
 import { SquishyPricing } from "@/components/ui/squishy-pricing";
-import { motion } from "framer-motion";
+import { ContactCard } from "@/components/ui/contact-card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MailIcon, MapPinIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Three.js Hyperspeed — only loaded after user scrolls (zero impact on PageSpeed)
 const Hyperspeed = dynamic(() => import("@/components/Hyperspeed"), { ssr: false });
@@ -406,7 +411,106 @@ function HeroSection() {
   );
 }
 
+function ContactSection({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const contactRef = useRef<HTMLDivElement>(null);
+  const [formState, setFormState] = useState({ name: "", email: "", message: "" });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (open && contactRef.current) {
+      contactRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [open]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formState),
+      });
+      if (res.ok) {
+        setSent(true);
+        setFormState({ name: "", email: "", message: "" });
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.section
+          ref={contactRef}
+          id="contact"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden"
+        >
+          <div
+            className="min-h-screen flex items-center justify-center px-6 py-20 relative"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 60, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="mx-auto max-w-5xl w-full"
+            >
+              <ContactCard
+                title="Tem dúvidas?"
+                description="Se você tem alguma dúvida sobre o GrooveShelf, quer saber mais sobre os planos, ou precisa de ajuda — manda pra gente. Respondemos em até 1 dia útil."
+                contactInfo={[
+                  { icon: MailIcon, label: "Email", value: "leandro@bilhon.com" },
+                  { icon: MapPinIcon, label: "Localização", value: "São Paulo, Brasil", className: "col-span-2" },
+                ]}
+              >
+                {sent ? (
+                  <div className="w-full text-center py-8">
+                    <p className="text-lg font-semibold text-primary">Mensagem enviada!</p>
+                    <p className="text-sm text-muted-foreground mt-2">Responderemos em breve.</p>
+                    <Button variant="outline" className="mt-4" onClick={() => { setSent(false); onClose(); }}>
+                      Fechar
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="w-full space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <Label>Nome</Label>
+                      <Input type="text" required value={formState.name} onChange={(e) => setFormState(s => ({ ...s, name: e.target.value }))} placeholder="Seu nome" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" required value={formState.email} onChange={(e) => setFormState(s => ({ ...s, email: e.target.value }))} placeholder="seu@email.com" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Mensagem</Label>
+                      <Textarea required value={formState.message} onChange={(e) => setFormState(s => ({ ...s, message: e.target.value }))} placeholder="Escreva sua dúvida ou mensagem..." />
+                    </div>
+                    <Button className="w-full" type="submit" disabled={sending}>
+                      {sending ? "Enviando..." : "Enviar mensagem"}
+                    </Button>
+                  </form>
+                )}
+              </ContactCard>
+            </motion.div>
+          </div>
+        </motion.section>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export default function LandingPage() {
+  const [contactOpen, setContactOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -534,8 +638,19 @@ export default function LandingPage() {
             </p>
           </motion.div>
           <SquishyPricing />
+          <div className="text-center mt-8">
+            <button
+              onClick={() => setContactOpen(!contactOpen)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
+            >
+              {contactOpen ? "Fechar contato" : "Tenho dúvidas"}
+            </button>
+          </div>
         </div>
       </section>
+
+      {/* Contact — animated fullscreen section */}
+      <ContactSection open={contactOpen} onClose={() => setContactOpen(false)} />
 
       {/* Footer */}
       <footer className="border-t border-border py-12 px-6">

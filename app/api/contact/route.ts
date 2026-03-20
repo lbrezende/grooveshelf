@@ -1,0 +1,61 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { name, email, message } = await req.json();
+
+    if (!name || !email || !message) {
+      return NextResponse.json(
+        { error: "Nome, email e mensagem são obrigatórios." },
+        { status: 400 }
+      );
+    }
+
+    const resendKey = process.env.AUTH_RESEND_KEY;
+    if (!resendKey) {
+      console.warn("AUTH_RESEND_KEY not set — contact form disabled");
+      return NextResponse.json(
+        { error: "Serviço de email não configurado." },
+        { status: 503 }
+      );
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL || "noreply@grooveshelf.com",
+        to: "leandro@bilhon.com",
+        subject: `[GrooveShelf] Contato de ${name}`,
+        reply_to: email,
+        html: `
+          <h2>Novo contato via GrooveShelf</h2>
+          <p><strong>Nome:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <hr />
+          <p>${message.replace(/\n/g, "<br />")}</p>
+        `,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Resend error:", err);
+      return NextResponse.json(
+        { error: "Falha ao enviar email." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Contact API error:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 }
+    );
+  }
+}
