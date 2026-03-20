@@ -326,58 +326,76 @@ function HeroSection() {
             </div>
 
             {/* Sidebar + Content */}
-            <div className="flex" style={{ height: "320px" }}>
+            <div className="flex" style={{ height: "360px" }}>
               {/* Sidebar */}
-              <div className="w-[240px] border-r border-border/30 p-4 flex flex-col gap-1">
+              <div className="w-[200px] border-r border-border/30 p-4 flex flex-col gap-1">
                 {[
-                  { label: "Dashboard", active: true },
-                  { label: "Library", active: false },
-                  { label: "Wishlist", active: false },
-                  { label: "Listening Diary", active: false },
-                  { label: "Monthly List", active: false },
+                  { label: "Dashboard", icon: "🏠", active: false },
+                  { label: "Library", icon: "🎵", active: false },
+                  { label: "Wishlist", icon: "💿", active: true, badge: "12" },
+                  { label: "Listening", icon: "📖", active: false },
+                  { label: "Monthly", icon: "🛒", active: false },
                 ].map((item) => (
                   <div
                     key={item.label}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${
                       item.active
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
-                    <div
-                      className={`w-5 h-5 rounded flex items-center justify-center text-xs ${
-                        item.active ? "bg-primary/20" : "bg-muted/30"
-                      }`}
-                    >
-                      {item.active ? "🏠" : "·"}
-                    </div>
+                    <span className="text-xs">{item.icon}</span>
                     {item.label}
-                    {item.label === "Wishlist" && (
+                    {item.badge && (
                       <span className="ml-auto text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                        4
+                        {item.badge}
                       </span>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* Main content area — skeleton using muted tokens */}
-              <div className="flex-1 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-foreground/10" />
-                  <div className="flex flex-col gap-1.5">
-                    <div className="w-32 h-3 rounded bg-foreground/15" />
-                    <div className="w-20 h-2.5 rounded bg-foreground/8" />
+              {/* Main content — wishlist skeleton with vinyl cards */}
+              <div className="flex-1 p-5 overflow-hidden">
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-28 h-4 rounded bg-foreground/15" />
+                    <div className="w-6 h-4 rounded-full bg-primary/20" />
                   </div>
+                  <div className="w-20 h-7 rounded-lg bg-primary/15" />
                 </div>
-                <div className="space-y-3">
-                  <div className="w-full h-3 rounded bg-foreground/12" />
-                  <div className="w-[85%] h-3 rounded bg-foreground/8" />
-                  <div className="w-[70%] h-3 rounded bg-foreground/12" />
-                  <div className="w-[60%] h-3 rounded bg-foreground/6" />
-                </div>
-                <div className="mt-6">
-                  <div className="w-24 h-8 rounded-lg bg-foreground/10" />
+
+                {/* Vinyl album grid — skeleton cards */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { w: "w-full", opacity: "opacity-100" },
+                    { w: "w-full", opacity: "opacity-90" },
+                    { w: "w-full", opacity: "opacity-80" },
+                    { w: "w-full", opacity: "opacity-70" },
+                    { w: "w-full", opacity: "opacity-60" },
+                    { w: "w-full", opacity: "opacity-50" },
+                    { w: "w-full", opacity: "opacity-40" },
+                    { w: "w-full", opacity: "opacity-30" },
+                  ].map((card, i) => (
+                    <div key={i} className={`${card.opacity} flex flex-col gap-2`}>
+                      {/* Album cover skeleton */}
+                      <div className="aspect-square rounded-lg bg-foreground/8 relative overflow-hidden">
+                        {/* Vinyl disc effect */}
+                        <div className="absolute inset-2 rounded-full border border-foreground/6" />
+                        <div className="absolute inset-4 rounded-full border border-foreground/4" />
+                        <div className="absolute inset-[38%] rounded-full bg-foreground/10" />
+                        <div className="absolute inset-[44%] rounded-full bg-foreground/6" />
+                      </div>
+                      {/* Title skeleton */}
+                      <div className={`h-2.5 rounded bg-foreground/12`} style={{ width: `${65 + (i * 7) % 30}%` }} />
+                      {/* Artist skeleton */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-2 rounded bg-foreground/6" style={{ width: `${45 + (i * 11) % 25}%` }} />
+                        <div className="w-4 h-4 rounded bg-primary/10" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

@@ -2,26 +2,32 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { db } from "@/lib/db";
+import { db, hasDatabase } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(db as any),
+  ...(hasDatabase ? { adapter: PrismaAdapter(db as any) } : {}),
   providers: [
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      clientId: process.env.AUTH_GOOGLE_ID || "placeholder",
+      clientSecret: process.env.AUTH_GOOGLE_SECRET || "placeholder",
     }),
-    Resend({
-      apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.RESEND_FROM_EMAIL || "noreply@grooveshelf.com",
-    }),
+    ...(process.env.AUTH_RESEND_KEY
+      ? [
+          Resend({
+            apiKey: process.env.AUTH_RESEND_KEY,
+            from: process.env.RESEND_FROM_EMAIL || "noreply@grooveshelf.com",
+          }),
+        ]
+      : []),
   ],
+  secret: process.env.AUTH_SECRET || "dev-secret-change-me-in-production",
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   events: {
     async createUser({ user }) {
-      // First login → TRIAL 14 days
+      if (!hasDatabase) return;
       await db.user.update({
         where: { id: user.id },
         data: {
@@ -33,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async session({ session, user }) {
-      if (session.user) {
+      if (session.user && hasDatabase) {
         session.user.id = user.id;
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
