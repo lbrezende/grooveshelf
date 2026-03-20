@@ -419,9 +419,19 @@ function ContactSection({ open, onClose }: { open: boolean; onClose: () => void 
 
   useEffect(() => {
     if (open && contactRef.current) {
-      contactRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Small delay to let the section animate open before scrolling
+      setTimeout(() => {
+        contactRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
     }
   }, [open]);
+
+  function handleBackToTop() {
+    onClose();
+    setTimeout(() => {
+      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -464,6 +474,15 @@ function ContactSection({ open, onClose }: { open: boolean; onClose: () => void 
               transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
               className="mx-auto max-w-5xl w-full"
             >
+              <button
+                onClick={handleBackToTop}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-6"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+                Voltar para o GrooveShelf
+              </button>
               <ContactCard
                 title="Tem dúvidas?"
                 description="Se você tem alguma dúvida sobre o GrooveShelf, quer saber mais sobre os planos, ou precisa de ajuda — manda pra gente. Respondemos em até 1 dia útil."
@@ -472,16 +491,44 @@ function ContactSection({ open, onClose }: { open: boolean; onClose: () => void 
                   { icon: MapPinIcon, label: "Localização", value: "São Paulo, Brasil", className: "col-span-2" },
                 ]}
               >
+                <AnimatePresence mode="wait">
                 {sent ? (
-                  <div className="w-full text-center py-8">
-                    <p className="text-lg font-semibold text-primary">Mensagem enviada!</p>
-                    <p className="text-sm text-muted-foreground mt-2">Responderemos em breve.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setSent(false); onClose(); }}>
-                      Fechar
-                    </Button>
-                  </div>
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full text-center py-8 flex flex-col items-center"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 15 }}
+                      className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4"
+                    >
+                      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <motion.path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ delay: 0.4, duration: 0.4 }}
+                        />
+                      </svg>
+                    </motion.div>
+                    <p className="text-lg font-semibold text-foreground">Obrigado!</p>
+                    <p className="text-sm text-muted-foreground mt-1">Entraremos em contato em breve.</p>
+                  </motion.div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="w-full space-y-4">
+                  <motion.form
+                    key="form"
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    onSubmit={handleSubmit}
+                    className="w-full space-y-4"
+                  >
                     <div className="flex flex-col gap-2">
                       <Label>Nome</Label>
                       <Input type="text" required value={formState.name} onChange={(e) => setFormState(s => ({ ...s, name: e.target.value }))} placeholder="Seu nome" />
@@ -497,8 +544,9 @@ function ContactSection({ open, onClose }: { open: boolean; onClose: () => void 
                     <Button className="w-full" type="submit" disabled={sending}>
                       {sending ? "Enviando..." : "Enviar mensagem"}
                     </Button>
-                  </form>
+                  </motion.form>
                 )}
+              </AnimatePresence>
               </ContactCard>
             </motion.div>
           </div>
