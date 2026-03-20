@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
     const payload = {
       from: fromEmail,
-      to: "leandro@bilhon.com",
+      to: process.env.CONTACT_EMAIL || "lbrezende@gmail.com",
       subject: `[GrooveShelf] Contato de ${name}`,
       reply_to: email,
       html: `
