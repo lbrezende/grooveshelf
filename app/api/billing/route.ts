@@ -5,8 +5,10 @@ import {
   createCheckoutSession,
   createCustomerPortalSession,
 } from "@/lib/stripe";
+import { requireDatabase } from "@/lib/api-guard";
 
 export async function POST(request: Request) {
+  const dbError = requireDatabase(); if (dbError) return dbError;
   try {
     const session = await auth();
     if (!session?.user)

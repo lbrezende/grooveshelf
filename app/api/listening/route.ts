@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { listeningSessionSchema } from "@/lib/validations";
+import { requireDatabase } from "@/lib/api-guard";
 
 export async function GET() {
+  const dbError = requireDatabase(); if (dbError) return dbError;
   try {
     const session = await auth();
     if (!session?.user)
@@ -32,6 +34,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const dbError = requireDatabase(); if (dbError) return dbError;
   try {
     const session = await auth();
     if (!session?.user)
