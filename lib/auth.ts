@@ -5,13 +5,15 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db, hasDatabase } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   ...(hasDatabase ? { adapter: PrismaAdapter(db as any) } : {}),
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || "placeholder",
       clientSecret: process.env.AUTH_GOOGLE_SECRET || "placeholder",
     }),
-    ...(process.env.AUTH_RESEND_KEY
+    // Email provider requires a database adapter for verification tokens
+    ...(process.env.AUTH_RESEND_KEY && hasDatabase
       ? [
           Resend({
             apiKey: process.env.AUTH_RESEND_KEY,
@@ -37,9 +39,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
     },
   },
+  // Use JWT strategy when no database adapter is available
+  ...(hasDatabase ? {} : { session: { strategy: "jwt" as const } }),
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && hasDatabase) {
+    async jwt({ token, user }) {
+      // On initial sign-in, persist the user id into the JWT
+      if (user?.id) token.sub = user.id;
+      return token;
+    },
+    async session({ session, user, token }) {
+      if (session.user && hasDatabase && user) {
         session.user.id = user.id;
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
@@ -55,6 +64,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           (session.user as any).stripeCurrentPeriodEnd =
             dbUser.stripeCurrentPeriodEnd;
         }
+      } else if (session.user && token) {
+        // JWT strategy — no DB, set basic session info from token
+        session.user.id = token.sub || "";
       }
       return session;
     },
