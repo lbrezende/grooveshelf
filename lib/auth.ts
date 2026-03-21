@@ -13,10 +13,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET || "placeholder",
     }),
     // Email provider requires a database adapter for verification tokens
-    ...(process.env.AUTH_RESEND_KEY && hasDatabase
+    ...(process.env.RESEND_API_KEY && hasDatabase
       ? [
           Resend({
-            apiKey: process.env.AUTH_RESEND_KEY,
+            apiKey: process.env.RESEND_API_KEY,
             from: process.env.RESEND_FROM_EMAIL || "noreply@grooveshelf.com",
           }),
         ]

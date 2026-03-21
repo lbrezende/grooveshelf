@@ -11,9 +11,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const resendKey = process.env.AUTH_RESEND_KEY;
+    const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey) {
-      console.warn("AUTH_RESEND_KEY not set — contact form disabled");
+      console.warn("RESEND_API_KEY not set — contact form disabled");
       return NextResponse.json(
         { error: "Serviço de email não configurado." },
         { status: 503 }
