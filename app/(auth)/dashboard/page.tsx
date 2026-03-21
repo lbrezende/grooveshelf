@@ -52,22 +52,35 @@ export default function DashboardPage() {
 
   const { data: artists, isLoading: loadingArtists } = useQuery({
     queryKey: ["artists"],
-    queryFn: () => safeFetchArray("/api/artists"),
+    queryFn: () => safeFetchArray<Record<string, unknown>>("/api/artists"),
   });
 
   const { data: albums, isLoading: loadingAlbums } = useQuery({
     queryKey: ["albums"],
-    queryFn: () => safeFetchArray("/api/albums"),
+    queryFn: () =>
+      safeFetchArray<{
+        id: string;
+        title: string;
+        coverUrl?: string;
+        artist?: { name: string };
+      }>("/api/albums"),
   });
 
   const { data: wishlist, isLoading: loadingWishlist } = useQuery({
     queryKey: ["wishlist"],
-    queryFn: () => safeFetchArray("/api/wishlist"),
+    queryFn: () => safeFetchArray<Record<string, unknown>>("/api/wishlist"),
   });
 
   const { data: sessions, isLoading: loadingSessions } = useQuery({
     queryKey: ["listening"],
-    queryFn: () => safeFetchArray("/api/listening"),
+    queryFn: () =>
+      safeFetchArray<{
+        id: string;
+        album?: { title: string; coverUrl?: string; artist?: { name: string } };
+        rating: number;
+        listenedAt: string;
+        notes?: string;
+      }>("/api/listening"),
   });
 
   const userName = session?.user?.name?.split(" ")[0] ?? "Colecionador";
@@ -173,12 +186,7 @@ export default function DashboardPage() {
             : hasAlbums
               ? /* Real album cards */
                 albums.slice(0, 8).map(
-                  (album: {
-                    id: string;
-                    title: string;
-                    coverUrl?: string;
-                    artist?: { name: string };
-                  }) => (
+                  (album) => (
                     <div key={album.id} className="group cursor-pointer">
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2 ring-1 ring-border transition-all group-hover:ring-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10">
                         {album.coverUrl ? (
@@ -268,13 +276,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {recentSessions.map(
-                  (s: {
-                    id: string;
-                    album?: { title: string; coverUrl?: string; artist?: { name: string } };
-                    rating: number;
-                    listenedAt: string;
-                    notes?: string;
-                  }) => (
+                  (s) => (
                     <div
                       key={s.id}
                       className="flex items-center gap-4 rounded-lg bg-background/50 p-3 border border-border"
