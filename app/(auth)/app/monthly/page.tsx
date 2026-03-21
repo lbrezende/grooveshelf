@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { PaywallGate } from "@/components/paywall/paywall-gate";
+import { safeFetchArray } from "@/lib/safe-fetch";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,14 +111,14 @@ export default function MonthlyPlanningPage() {
     WishlistItem[]
   >({
     queryKey: ["wishlist"],
-    queryFn: () => fetch("/api/wishlist").then((r) => r.json()),
+    queryFn: () => safeFetchArray<WishlistItem>("/api/wishlist"),
   });
 
   const { data: allMonthlyLists = [], isLoading: loadingLists } = useQuery<
     MonthlyList[]
   >({
     queryKey: ["monthly-list"],
-    queryFn: () => fetch("/api/monthly-list").then((r) => r.json()),
+    queryFn: () => safeFetchArray<MonthlyList>("/api/monthly-list"),
   });
 
   // ---------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import {
   ListMusic,
   Star,
 } from "lucide-react";
+import { safeFetchArray } from "@/lib/safe-fetch";
 
 /* Spotify CDN covers for the skeleton/demo state */
 const DEMO_COVERS = [
@@ -49,31 +50,24 @@ const DEMO_ALBUMS = [
 export default function DashboardPage() {
   const { data: session } = useSession();
 
-  const safeFetch = async (url: string) => {
-    const r = await fetch(url);
-    if (!r.ok) return [];
-    const data = await r.json();
-    return Array.isArray(data) ? data : [];
-  };
-
   const { data: artists, isLoading: loadingArtists } = useQuery({
     queryKey: ["artists"],
-    queryFn: () => safeFetch("/api/artists"),
+    queryFn: () => safeFetchArray("/api/artists"),
   });
 
   const { data: albums, isLoading: loadingAlbums } = useQuery({
     queryKey: ["albums"],
-    queryFn: () => safeFetch("/api/albums"),
+    queryFn: () => safeFetchArray("/api/albums"),
   });
 
   const { data: wishlist, isLoading: loadingWishlist } = useQuery({
     queryKey: ["wishlist"],
-    queryFn: () => safeFetch("/api/wishlist"),
+    queryFn: () => safeFetchArray("/api/wishlist"),
   });
 
   const { data: sessions, isLoading: loadingSessions } = useQuery({
     queryKey: ["listening"],
-    queryFn: () => safeFetch("/api/listening"),
+    queryFn: () => safeFetchArray("/api/listening"),
   });
 
   const userName = session?.user?.name?.split(" ")[0] ?? "Colecionador";

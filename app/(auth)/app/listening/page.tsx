@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Disc3, Star, Headphones, BarChart3 } from "lucide-react";
+import { safeFetchArray } from "@/lib/safe-fetch";
 
 interface Album {
   id: string;
@@ -97,12 +98,12 @@ export default function ListeningPage() {
     ListeningSession[]
   >({
     queryKey: ["listening"],
-    queryFn: () => fetch("/api/listening").then((r) => r.json()),
+    queryFn: () => safeFetchArray<ListeningSession>("/api/listening"),
   });
 
   const { data: albums = [] } = useQuery<Album[]>({
     queryKey: ["albums"],
-    queryFn: () => fetch("/api/albums").then((r) => r.json()),
+    queryFn: () => safeFetchArray<Album>("/api/albums"),
   });
 
   // Stats

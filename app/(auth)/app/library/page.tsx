@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Music, Disc3 } from "lucide-react";
+import { safeFetchArray } from "@/lib/safe-fetch";
 
 interface Artist {
   id: string;
@@ -71,12 +72,12 @@ export default function LibraryPage() {
   // Queries
   const { data: artists = [], isLoading: loadingArtists } = useQuery<Artist[]>({
     queryKey: ["artists"],
-    queryFn: () => fetch("/api/artists").then((r) => r.json()),
+    queryFn: () => safeFetchArray<Artist>("/api/artists"),
   });
 
   const { data: albums = [], isLoading: loadingAlbums } = useQuery<Album[]>({
     queryKey: ["albums"],
-    queryFn: () => fetch("/api/albums").then((r) => r.json()),
+    queryFn: () => safeFetchArray<Album>("/api/albums"),
   });
 
   // Mutations - Artists

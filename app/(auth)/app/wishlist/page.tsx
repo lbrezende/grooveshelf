@@ -40,6 +40,7 @@ import {
   ShoppingCart,
   AlertTriangle,
 } from "lucide-react";
+import { safeFetchArray } from "@/lib/safe-fetch";
 
 interface Album {
   id: string;
@@ -74,12 +75,12 @@ export default function WishlistPage() {
     WishlistItem[]
   >({
     queryKey: ["wishlist"],
-    queryFn: () => fetch("/api/wishlist").then((r) => r.json()),
+    queryFn: () => safeFetchArray<WishlistItem>("/api/wishlist"),
   });
 
   const { data: albums = [] } = useQuery<Album[]>({
     queryKey: ["albums"],
-    queryFn: () => fetch("/api/albums").then((r) => r.json()),
+    queryFn: () => safeFetchArray<Album>("/api/albums"),
   });
 
   // Sorted by priority score descending
